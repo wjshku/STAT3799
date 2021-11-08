@@ -1,0 +1,280 @@
+---
+title: "Simulation2"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+Prep
+```{r}
+library(tidyverse)
+library(Deriv)
+```
+
+1. First we could define all the functions we need.
+```{r}
+mx <- function(x) sin(x)
+
+nw <- function(alpha, p){
+  return(alpha, p)
+}
+
+k <- function(x){
+  return(dnorm(x))
+}
+
+alpha <- function(n, h, x, X, Y, k){
+  temp <- 0
+  for(i in 1:length(X)){
+    temp <- temp + Y[i] * k((x - X[i])/h)/(n*h)
+  }
+  return(temp)
+}
+
+valpha <- Vectorize(alpha,SIMPLIFY = FALSE)
+
+phat<- function(n, h, x, X, k){
+  temp <- sum(k((x - X)/h)/(n*h))
+  return(temp)
+}
+
+vphat<- Vectorize(phat)
+
+mhat <- function(n, h, x, X, Y, k){
+  return(alpha(n,h,x,X,Y,k)/phat(n,h,x,X,k))
+}
+
+vmhat <- function(n, h, x, X, Y, k){
+  return(valpha(n,h,x,X,Y,k)/vphat(n,h,x,X,k))
+}
+
+beta <- function(n, h, x, X, Y, k, m, g, Xu){
+  Yu <- 1:length(Xu)
+  for(i in 1:length(Xu)){
+    Yu[i] <- mhat(n, h, Xu[i], X, Y, k)
+  }
+  return(alpha(m,g,x,Xu,Yu,k))
+}
+
+rhat <- function(n, h, x, X, Y, k, m, g, Xu){
+  return(beta(n, h, x, X, Y, k, m, g, Xu)/phat(m,g,x,Xu,k))
+}
+```
+
+
+Parameters
+```{r}
+sigmax <- 5
+p <- function(x) 1/(4*pi)*(x<4*pi)*(x>0)
+p_1 <- function(x) 0
+p_2 <- Deriv(p_1)
+q <- function(x) 1/(4*pi)*(x<4*pi)*(x>0)
+q_1 <- function(x) 0
+q_2 <- Deriv(q_1)
+mx_1 <- Deriv(mx)
+mx_2 <- Deriv(mx_1)
+
+sigmak <- integrate(function(x) k(x)^2*x^2, -Inf, Inf)
+rk <- integrate(function(x) k(x)^2, -Inf, Inf)
+muk <- integrate(function(x) k(x)*x^2, -Inf, Inf)
+#rp <- integrate(function(x) p_2(x)^2, -Inf, Inf)
+#rq <- integrate(function(x) q_2(x)^2, -Inf, Inf)
+
+sigmax <- 5
+theta22 <- integrate(function(x) mx_2(x)^2*p(x), -Inf, Inf)
+sigmaep <- 0.75
+```
+
+
+Test for some data, instead of just one single data point. 
+First, fix test data for all. Let it be -5:5:1
+```{r}
+
+#Generate the data
+paraset3 <- function(n, m_order, sigmaep, rk, muk, theta22){
+  m <- round(n^m_order)
+  h <- (rk/muk^2*sigmaep/(theta22*n))^(1/5)
+  g <- (rk/muk^2*sigmaep/(theta22*m))^(1/5)
+  
+  lambda <- 1 + h^2/g^2
+  return(data.frame(n,m,h,g,lambda))
+}
+
+paraset4 <- function(n, m_order, sigmaep, rk, muk, test){
+  m <- round(n^m_order)
+  h <- (rk/muk^2*sigmaep/(mx_2(2)^2*p(test)*n))^(1/5)
+  g <- (rk/muk^2*sigmaep/(mx_2(2)^2*p(test)*m))^(1/5)
+}
+```
+
+```{r}
+simu <- function(rounds, n, m, sigmax = 5, sigmaep = 1){
+  data <- list()
+  data_un <- list()
+  
+  for(i in 1:rounds){
+    X <- runif(n,0,4*pi)
+    Y <- mx(X) + rnorm(n, sd = sigmaep)
+    Xu <- runif(m,0,4*pi)
+    data <- c(data, list(data.frame(X,Y)))
+    data_un <- c(data_un,list(Xu))
+  }
+  
+  return(list(data = data,data_un = data_un))
+}
+
+nw_simu <- function(data, rounds, test, n, h, k){
+  esti_nw <- test
+  
+  MSE_NW <- 1:rounds
+  
+  for(i in 1:rounds){
+    X <- data[[i]]$X
+    Y <- data[[i]]$Y
+    test <- X
+    real <- mx(test)
+    
+    for(j in 1:length(X)){
+    #set.seed(i) # random, may exist better solutions
+        esti_nw[j] <- mhat(n,h,test[j],X,Y,k)
+    }
+    
+    MSE_NW[i] <- mean((real - esti_nw)^2)
+    #browser()
+    if(i == 1){
+      esti <- data.frame(X = test,esti_nw)
+    }else{
+      esti <- rbind(esti,data.frame(X = test,esti_nw))
+    }
+  }
+  
+  mMSE_NW <- mean(MSE_NW)
+  
+  return(list(mMSE = mMSE_NW, esti = esti))
+  
+}
+
+#Self-Supervised
+ss_simu <- function(data, data_un, rounds, test, n, h, m, g, k){
+  esti_ss <- test
+  
+  MSE_SS <- 1:rounds
+  
+  
+  for(i in 1:rounds){
+    X <- data[[i]]$X
+    Y <- data[[i]]$Y
+    Xu <- data_un[[i]]
+    test <- X
+    real <- mx(test)
+    
+    for(j in 1:length(X)){
+    #set.seed(i) # random, may exist better solutions
+        esti_ss[j] <- rhat(n,h,test[j],X,Y,k,m,g,Xu)
+    }
+    MSE_SS[i] <- mean((real - esti_ss)^2)
+    #browser()
+    if(i == 1){
+      esti <- data.frame(X = test,esti_ss)
+    }else{
+      esti <- rbind(esti,data.frame(X = test,esti_ss))
+    }
+  }
+  
+  mMSE_SS <- mean(MSE_SS)
+  
+  return(list(mMSE = mMSE_SS, esti = esti))
+  
+}
+
+hy_simu <- function(rounds, test, lambda, esti_nw, esti_ss){
+  esti <- lambda * esti_nw + (1-lambda) * esti_ss
+  
+  MSE_HY <- 1:rounds
+  
+  for(i in 1:rounds){
+    real <- mx(data_all$data[[i]]$X)
+    esti_hy <- esti[(1+(i-1)*length(test)):(i*length(test))]
+    MSE_HY[i] <- mean((real - esti_hy)^2)
+  }
+  
+  mMSE_HY <- mean(MSE_HY)
+  
+  return(list(mMSE = mMSE_HY, esti_hy = esti))
+}
+
+```
+
+Grid search for bandwidth
+```{r}
+  para <- paraset3(64,10/19,sigmaep,rk$value, muk$value,theta22$value)
+  
+  test <- seq(0,4*pi,length.out = 32)
+  rounds <- 30
+  
+  set.seed(10)
+  
+  data_all <- simu(rounds, para$n*2, para$m, sigmax = sigmax, sigmaep = sigmaep)
+  
+  ratioh <- seq(0.2,2,0.2)
+  result_nw <- data.frame()
+  for(i in 1:length(ratioh)){
+    h <- ratioh[i]*para$h
+    mMSE_NW <- nw_simu(data_all$data, rounds, test, para$n,h, k)$mMSE
+    result_nw <- rbind(result_nw, data.frame(mMSE_NW, h))
+  }
+  
+result_nw
+plot(mMSE_NW~h,data = result_nw,main = "Average MSE_NW")
+min(result_nw$mMSE_NW)
+  
+  ratioh <- seq(0.5,2.5,0.5)
+  ratiog <- seq(0.5,1.5,0.2)
+  result_ss <- data.frame()
+  for(i in 1:length(ratioh)){
+    for(j in 1:length(ratiog)){
+    h <- ratioh[i]*para$h
+    g <- ratiog[j]*para$g
+    mMSE_SS <- ss_simu(data_all$data, data_all$data_un, rounds, test, para$n,h, para$m,g, k)
+    result_ss <- rbind(result_ss, data.frame(mMSE_SS, h, g))
+  }
+  }
+  
+result_ss
+min(result_ss$mMSE_SS)
+plot(mMSE_SS~h,data = filter(result_ss, g == result_ss$g[1]),main = "g = 1")
+plot(mMSE_SS~g,data = filter(result_ss, h == result_ss$h[1]),main = "h = 1")
+```
+
+Bandwidth Search for Hybrid Estimator
+```{r}
+ratioh <- seq(0.5,2.5,0.5)
+ratiog <- seq(0.5,1.5,0.2)
+
+result_hy <- data.frame()
+  for(i in 1:length(ratioh)){
+  for(j in 1:length(ratiog)){
+    h <- ratioh[i]*para$h
+    g <- ratiog[j]*para$g
+    para$lambda <- 1 + h^2/g^2
+    nw_res <- nw_simu(data_all$data, rounds, test, para$n,h, k)
+    ss_res <- ss_simu(data_all$data, data_all$data_un, rounds, test, para$n,h, para$m,g, k)
+    
+    hy_res <- hy_simu(rounds, test, para$lambda, nw_res$esti$esti_nw, ss_res$esti$esti_ss)
+    
+    result_hy <- rbind(result_hy, data.frame(mMSE_HY = hy_res$mMSE, h, g))
+  }
+  }
+
+result_hy
+min(result_hy$mMSE_HY)
+match(min(result_hy$mMSE_HY),result_hy$mMSE_HY)
+plot(mMSE_HY~h,data = filter(result_hy, g == result_hy$g[6]),main = "g = 0.87")
+plot(mMSE_HY~g,data = filter(result_hy, h == result_hy$h[2]),main = "h = 0.42")
+
+
+```

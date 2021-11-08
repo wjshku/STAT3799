@@ -1,0 +1,22 @@
+library(xlsx)
+# load file contents
+file <- "C:/HKU/Research/Stephen/STAT3799/Notes/Experiment record.xlsx"
+time <- "1106_1809"
+para$time <- time
+write.xlsx(mse,file,sheetName = time,append = TRUE)
+
+file <- "C:/HKU/Research/Stephen/STAT3799/Notes/Grid record.xlsx"
+write.xlsx(result,file,sheetName = "1106_1954_res",append = TRUE)
+write.xlsx(data_all$data,file,sheetName = "1106_1954_data",append = TRUE)
+write.xlsx(data_all$data_un,file,sheetName = "1106_1954_dataun",append = TRUE)
+
+wb <- loadWorkbook(file)
+sheets <- getSheets(wb)
+sheet <- sheets[[1]]  # or another
+# data to put into B10:H20 range
+
+# modify contents
+addDataFrame(para, sheet, col.names = FALSE, row.names = FALSE,
+             startRow = 4, startColumn = 1)
+# save to disk
+saveWorkbook(wb, file)
