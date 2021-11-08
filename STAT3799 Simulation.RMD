@@ -71,7 +71,7 @@ simu_norm <- function(multi, n, m, meanx, sigmax, sigmaep = 1){
   return(data.frame(X, Y))
 }
 
-nw_simu <- function(data, rounds, testd, n, h, k){
+nw_simu <- function(data, testd, n, h, k){
   
     esti_nw <- testd$Y
     esti <- data.frame()
@@ -95,7 +95,7 @@ nw_simu <- function(data, rounds, testd, n, h, k){
 }
 
 #Self-Supervised
-ss_simu <- function(data, data_un, rounds, testd, n, h, m, g, k){
+ss_simu <- function(data, data_un, testd, n, h, m, g, k){
   esti <- data.frame()
     esti_ss <- testd$Y
 
@@ -121,7 +121,7 @@ ss_simu <- function(data, data_un, rounds, testd, n, h, m, g, k){
   
 }
 
-hy_simu <- function(rounds, testd, lambda, esti_nw, esti_ss){
+hy_simu <- function(testd, lambda, esti_nw, esti_ss){
   
   esti <- data_frame()
   
@@ -162,7 +162,7 @@ Bandwidth Search for NW Estimator
   for(i in 1:length(ratioh)){
     h <- ratioh[i]*para$h
     for(k in 1:rounds){
-      MSE_NW <- nw_simu(train_label, rounds, test, para$n,h, k)$MSE
+      MSE_NW <- nw_simu(train_label,test, para$n,h, k)$MSE
       
     }
     result_nw <- rbind(result_nw, data.frame(MSE_NW, h))
@@ -179,7 +179,7 @@ min(result_nw$MSE_NW)
     for(j in 1:length(ratiog)){
     h <- ratioh[i]*para$h
     g <- ratiog[j]*para$g
-    MSE_SS <- ss_simu(train_label, train_un, rounds, test, para$n,h, para$m,g, k)$MSE
+    MSE_SS <- ss_simu(train_label, train_un, test, para$n,h, para$m,g, k)$MSE
     result_ss <- rbind(result_ss, data.frame(mMSE_SS, h, g))
   }
   }
@@ -201,10 +201,10 @@ result_hy <- data.frame()
     h <- ratioh[i]*para$h
     g <- ratiog[j]*para$g
     para$lambda <- 1 + h^2/g^2
-    nw_res <- nw_simu(train_label, rounds, test, para$n,h, k)
-    ss_res <- ss_simu(train_label, train_un, rounds, test, para$n,h, para$m,g, k)
+    nw_res <- nw_simu(train_label, test, para$n,h, k)
+    ss_res <- ss_simu(train_label, train_un, test, para$n,h, para$m,g, k)
     
-    hy_res <- hy_simu(rounds, test, para$lambda, nw_res$esti$esti_nw, ss_res$esti$esti_ss)
+    hy_res <- hy_simu(test, para$lambda, nw_res$esti$esti_nw, ss_res$esti$esti_ss)
     
     result_hy <- rbind(result_hy, data.frame(MSE_HY = hy_res$MSE, h, g))
   }
@@ -237,7 +237,7 @@ for(exp in 1:rounds){
   result_nw <- data.frame()
   for(i in 1:length(ratioh)){
     h <- ratioh[i]*para$h
-    MSE_NW <- nw_simu(train_label, rounds, test, para$n,h, k)$MSE
+    MSE_NW <- nw_simu(train_label, test, para$n,h, k)$MSE
 
     result_nw <- rbind(result_nw, data.frame(mMSE_NW = MSE_NW, h))
   }
@@ -249,10 +249,10 @@ for(exp in 1:rounds){
     h <- ratioh[i]*para$h
     g <- ratiog[j]*para$g
     para$lambda <- 1 + h^2/g^2
-    nw_res <- nw_simu(train_label, rounds, test, para$n,h, k)
-    ss_res <- ss_simu(train_label, train_un, rounds, test, para$n,h, para$m,g, k)
+    nw_res <- nw_simu(train_label, test, para$n,h, k)
+    ss_res <- ss_simu(train_label, train_un, test, para$n,h, para$m,g, k)
     
-    hy_res <- hy_simu(rounds, test, para$lambda, nw_res$esti$esti_nw, ss_res$esti$esti_ss)
+    hy_res <- hy_simu(test, para$lambda, nw_res$esti$esti_nw, ss_res$esti$esti_ss)
     
     result_hy <- rbind(result_hy, data.frame(mMSE_HY = hy_res$MSE, h, g))
   }
@@ -381,7 +381,7 @@ for(exp in 1:rounds){
   result_nw <- data.frame()
   for(i in 1:length(ratioh)){
     h <- ratioh[i]*para$h
-    MSE_NW <- nw_simu(train_label, rounds, test, para$n,h, k)$MSE
+    MSE_NW <- nw_simu(train_label, test, para$n,h, k)$MSE
     
     result_nw <- rbind(result_nw, data.frame(mMSE_NW = MSE_NW, h))
   }
@@ -394,10 +394,10 @@ for(exp in 1:rounds){
       h <- ratioh[i]*para$h
       g <- ratiog[j]*para$g
       para$lambda <- 1 + h^2/g^2
-      nw_res <- nw_simu(train_label, rounds, test, para$n,h, k)
-      ss_res <- ss_simu(train_label, train_un, rounds, test, para$n,h, para$m,g, k)
+      nw_res <- nw_simu(train_label, test, para$n,h, k)
+      ss_res <- ss_simu(train_label, train_un, test, para$n,h, para$m,g, k)
       
-      hy_res <- hy_simu(rounds, test, para$lambda, nw_res$esti$esti_nw, ss_res$esti$esti_ss)
+      hy_res <- hy_simu(test, para$lambda, nw_res$esti$esti_nw, ss_res$esti$esti_ss)
       
       result_hy <- rbind(result_hy, data.frame(mMSE_HY = hy_res$MSE, h, g))
     }
@@ -463,5 +463,91 @@ lines(mMSE_NW~h,data = result_nw, pch=18, col="blue", type="b", lty=2)
 legend("topright", legend=c("MSE_HY", "MSE_NW"),col=c("red", "blue"), lty=1:2, cex=0.8)
 ```
 
+3. Confidence Interval
+We need to estimate several unknown values in order to calculate the estimated variance.
+First, we estimate derivative of mx(x) at x using mhat'(x).
+```{r}
+k_1 <- Deriv(k)
+
+alpha_1 <- function(n, h, x, X, Y, k_1){
+  temp <- sum(Y*k_1((x - X)/h)/(n*h^2))
+  return(temp)
+}
+
+phat_1<- function(n, h, x, X, k_1){
+  temp <- sum(k_1((x - X)/h)/(n*h^2))
+  return(temp)
+}
+
+mhat_1 <- function(n, h, x, X, Y, k, k_1){
+  return(alpha_1(n,h,x,X,Y,k_1)/phat(n,h,x,X,k) - alpha(n,h,x,X,Y,k)*phat_1(n,h,x,X,k_1)/phat(n,h,x,X,k)^2)
+}
+
+```
+
+For the time being, we assume the error variance is known to us and do some simulations.
+```{r}
+esti_var <- function(n, h, m, g, mx_deriv1, sigmaep, px, qx, rk, sigmak, E_H_ratio = 1){
+  var <- 1/(n*h*px)*sigmaep^2*rk + (h^4)/(m*g^3*qx)*E_H_ratio*mx_deriv1^2*sigmak
+  return(var)
+}
+
+CI_1 <- function(level,para,train_label,train_un,test,sigmaep,rk,sigmak,E_H_ratio = 1){
+  n <- para$n
+  h <- para$h
+  m <- para$m
+  g <- para$g
+  X <- train_label$X
+  Y <- train_label$Y
+  mx_deriv1 <- mhat_1(n,h,test$X,X,Y,k,k_1)
+  px <- phat(n,h,test$X,X,k)
+  qx <- phat(m,g,test$X,train_un$X,k)
+  var_esti <- esti_var(n,h,m,g,mx_deriv1,sigmaep,px,qx,rk,sigmak,E_H_ratio = E_H_ratio)
+  para$lambda <- 1 + h^2/g^2
+  nw_esti <- mhat(n, h, test$X, X, Y, k)
+  ss_esti <- rhat(n, h, test$X, X, Y, k, m, g, train_un$X)
+  hy_esti <- hy_simu(test, para$lambda, nw_esti, ss_esti)$esti$esti_hy
+  #browser()
+  upper <- hy_esti + sqrt(var_esti)*qnorm(1-(1 - level)/2)
+  lower <- hy_esti - sqrt(var_esti)*qnorm(1-(1 - level)/2)
+  
+  return(data.frame(h = h, g = g, lower, upper, esti = hy_esti, sd = sqrt(var_esti)))
+}
+```
+
+Experiment4: Then we can find the 95% level of h in 0.1 - 2 and g in 0.1 - 2, after setting the parameters.
+```{r}
+set.seed(20)
+
+para <- paraset_g(128,10/19,rk$value, muk$value)
+
+data <- simu_norm(para$m + para$n, 1, para$m, meanx = 0, sigmax = sigmax, sigmaep = sigmaep)
+
+train_label <- data[1:para$n,]
+train_un <- data[(1+para$n):(para$m+para$n),]
+```
+
+```{r}
+hlist <- seq(0.1,1,0.1)
+glist <- seq(1,2,0.2)
+
+CI <- data.frame()
+for(i in hlist){
+  para$h <- i
+  for(j in glist){
+    para$g <- j
+    CI <- rbind(CI,CI_1(0.95,para,train_label,train_un,test,sigmaep,rk$value,sigmak$value))
+  }
+}
+
+plot(CI$esti, xlab = "Combinations", ylab = "Estimates", ylim = c(-10,10))
+points(CI$lower, col = "red")
+points(CI$upper, col = "blue")
+legend("topright", legend=c("Upper","Lower"),col=c("blue","red"), pch = c(1,1),cex=0.8)
+```
 
 
+Next, we estimate the error variance. 
+```{r}
+
+```
