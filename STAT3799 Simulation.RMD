@@ -352,13 +352,14 @@ paraset_g <- function(n, m_order,rk, muk){
 
 Calculate parameter and the data points
 ```{r}
-para <- paraset_g(32,10/19,rk$value, muk$value)
+para <- paraset_g(64,10/19,rk$value, muk$value)
 
 set.seed(80)
 
-data <- simu_norm(2, 500, para$m, meanx = 0, sigmax = sigmax, sigmaep = sigmaep)
+data <- simu_norm(2, para$n, para$m, meanx = 0, sigmax = sigmax, sigmaep = sigmaep)
 ```
 
+Do simulations
 ```{r}
 rounds <- 100
 
@@ -450,11 +451,11 @@ HY_opt <-match(min(result_hy$mMSE_HY,na.rm = TRUE),result_hy$mMSE_HY)
 
 plot(mMSE_NW~h,data = result_nw,col = "blue")
 
-plot(mMSE_HY~h,data = filter(result_hy, g == result_hy$g[HY_opt]),main = "g = 0.87")
+plot(mMSE_HY~h,data = filter(result_hy, g == result_hy$g[HY_opt]),main = "g = 3.25")
 plot(mMSE_HY~g,type = "b",data = filter(result_hy, h == result_hy$h[HY_opt]),main = "h = 0.64")
 ```
 
-Visualizing the performance of estimators
+Visualize the performance of estimators
 ```{r}
 plot(mMSE_HY~h,data = filter(result_hy, g == result_hy$g[HY_opt]), type="b", pch=19, col="red", xlab="h", ylab="MSE",main = "g = 2.17")
 # Add a line
@@ -492,7 +493,7 @@ esti_var <- function(n, h, m, g, mx_deriv1, sigmaep, px, qx, rk, sigmak, E_H_rat
   return(var)
 }
 
-CI_1 <- function(level,para,train_label,train_un,test,sigmaep,rk,sigmak,E_H_ratio = 1){
+CI_1 <- function(level,adjust,para,train_label,train_un,test,sigmaep,rk,sigmak,E_H_ratio = 1){
   n <- para$n
   h <- para$h
   m <- para$m
@@ -508,35 +509,33 @@ CI_1 <- function(level,para,train_label,train_un,test,sigmaep,rk,sigmak,E_H_rati
   ss_esti <- rhat(n, h, test$X, X, Y, k, m, g, train_un$X)
   hy_esti <- hy_simu(test, para$lambda, nw_esti, ss_esti)$esti$esti_hy
   #browser()
-  upper <- hy_esti + sqrt(var_esti)*qnorm(1-(1 - level)/2)
-  lower <- hy_esti - sqrt(var_esti)*qnorm(1-(1 - level)/2)
+  upper <- hy_esti + sqrt(var_esti)*qnorm(1-(1 - level)/2)*adjust
+  lower <- hy_esti - sqrt(var_esti)*qnorm(1-(1 - level)/2)*adjust
   
   return(data.frame(h = h, g = g, lower, upper, esti = hy_esti, sd = sqrt(var_esti)))
 }
 ```
 
-Experiment4: Then we can find the 95% level of h in 0.1 - 2 and g in 0.1 - 2, after setting the parameters.
+Experiment4: Then we can find the 95% level of h in 0.1 - 2 and g in 0.1 - 2, after setting the parameters. And subsequently find out their coverage probability.
+
+Setup parameters and sample.
 ```{r}
 set.seed(20)
 
-para <- paraset_g(128,10/19,rk$value, muk$value)
-
-data <- simu_norm(para$m + para$n, 1, para$m, meanx = 0, sigmax = sigmax, sigmaep = sigmaep)
-
-train_label <- data[1:para$n,]
-train_un <- data[(1+para$n):(para$m+para$n),]
+para <- paraset_g(128,15/19,rk$value, muk$value)
 ```
 
+Estimate CI for all (h,g)
 ```{r}
 hlist <- seq(0.1,1,0.1)
-glist <- seq(1,2,0.2)
+glist <- seq(1,5,1)
 
 CI <- data.frame()
 for(i in hlist){
   para$h <- i
   for(j in glist){
     para$g <- j
-    CI <- rbind(CI,CI_1(0.95,para,train_label,train_un,test,sigmaep,rk$value,sigmak$value))
+    CI <- rbind(CI,CI_1(adjust = 1,0.95,para,train_label,train_un,test,sigmaep,rk$value,sigmak$value))
   }
 }
 
@@ -544,6 +543,72 @@ plot(CI$esti, xlab = "Combinations", ylab = "Estimates", ylim = c(-10,10))
 points(CI$lower, col = "red")
 points(CI$upper, col = "blue")
 legend("topright", legend=c("Upper","Lower"),col=c("blue","red"), pch = c(1,1),cex=0.8)
+```
+
+Test the true coverage probability
+```{r}
+set.seed(5)
+
+rounds <- 50
+
+para$h <- 0.6 # result_hy$h[HY_opt]
+para$g <- 1 # result_hy$g[HY_opt]
+
+coverage <- data.frame()
+
+for(i in 1:rounds){
+  
+  data <- simu_norm(para$m + para$n, 1, para$m, meanx = 0, sigmax = sigmax, sigmaep = sigmaep)
+
+  train_label <- data[1:para$n,]
+  train_un <- data[(1+para$n):(para$m+para$n),]
+  
+  coverage <- rbind(coverage,CI_1(adjust = 3,0.95,para,train_label,train_un,test,sigmaep,rk$value,sigmak$value))
+}
+
+coverage$cover <- (coverage$lower <= test$Y)*(coverage$upper >= test$Y)
+mean(coverage$cover,na.rm = T)
+
+```
+
+Draw the plot to show how CI performs
+```{r}
+plot(coverage$lower, xlab = "Combinations", ylab = "Estimates",col="red", ylim = c(0,10))
+points(coverage$upper, col = "blue")
+abline(h = 4, col = "black")
+legend("topright", legend=c("Upper","Lower"),col=c("blue","red"), pch = c(1,1),cex=0.8)
+```
+
+Find the relationship between bandwidth and coverage probability
+```{r}
+set.seed(5)
+
+rounds <- 50
+
+hlist <- seq(0.1,1,0.1)
+glist <- seq(1,5,1)
+
+coverage <- data.frame()
+
+cover <- 1:rounds
+
+for(i in 1:length(hlist)){
+  para$h <- hlist[i]
+  for(j in 1:length(glist)){
+    para$g <- glist[j]
+    for(ep in 1:rounds){
+      data <- simu_norm(para$m + para$n, 1, para$m, meanx = 0, sigmax = sigmax, sigmaep = sigmaep)
+    
+      train_label <- data[1:para$n,]
+      train_un <- data[(1+para$n):(para$m+para$n),]
+      
+      temp <- CI_1(adjust = 1,0.95,para,train_label,train_un,test,sigmaep,rk$value,sigmak$value)
+      
+      cover[ep] <- (temp$lower <= test$Y)*(temp$upper >= test$Y)
+    }
+    coverage <- rbind(coverage,data.frame(h = para$h, g = para$g, cover = mean(cover, na.rm = T)))
+  }
+}
 ```
 
 
