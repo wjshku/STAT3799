@@ -27,7 +27,7 @@ valpha <- Vectorize(alpha,SIMPLIFY = FALSE)
 
 phat<- function(n, h, x, X, k){
   temp <- sum(k((x - X)/h)/(n*h))
-  return(temp)
+  return(max(temp,0.001)) #this is to prevent the estimation from resulting in NA
 }
 
 vphat<- Vectorize(phat)
@@ -350,18 +350,18 @@ paraset_g <- function(n, m_order,rk, muk){
 }
 ```
 
-Calculate parameter and the data points
+Calculate parameter
 ```{r}
-para <- paraset_g(64,10/19,rk$value, muk$value)
-
-set.seed(80)
-
-data <- simu_norm(2, para$n, para$m, meanx = 0, sigmax = sigmax, sigmaep = sigmaep)
+para <- paraset_g(2^5,10/19,rk$value, muk$value)
 ```
 
-Do simulations
+Do simulations to find the (h,g) with smallest MSE: Resampling
 ```{r}
-rounds <- 100
+set.seed(60)
+
+data <- simu_norm(2, para$n, para$m, meanx = 0, sigmax = sigmax, sigmaep = sigmaep)
+
+rounds <- 1000
 
 ratioh <- seq(0.5,2.5,0.5)
 ratiog <- seq(2,10,1)
@@ -411,12 +411,65 @@ result_nw$mMSE_NW <- mMSE_NW/rounds
 result_hy$mMSE_HY <- mMSE_HY/rounds
 ```
 
+Do simulations: True repitition
+```{r}
+rounds <- 100
+
+ratioh <- seq(0.5,2.5,0.5)
+ratiog <- seq(2,10,1)
+
+mMSE_NW <- 0
+mMSE_HY <- 0
+
+set.seed(20)
+record_nw <- matrix(nrow = length(ratioh), ncol = rounds)#
+record_hy <- matrix(nrow = length(ratioh)*length(ratiog), ncol = rounds)#
+
+for(exp in 1:rounds){
+  data <- simu_norm(para$m + para$n, 1, para$m, meanx = 0, sigmax = sigmax, sigmaep = sigmaep)
+    
+  train_label <- data[1:para$n,]
+  train_un <- data[(1+para$n):(para$m+para$n),]
+  #test <- data[-sample,]
+  test <- data.frame(X = 2, Y = mx(2))
+  result_nw <- data.frame()
+  for(i in 1:length(ratioh)){
+    h <- ratioh[i]*para$h
+    MSE_NW <- nw_simu(train_label, test, para$n,h, k)$MSE
+    
+    result_nw <- rbind(result_nw, data.frame(mMSE_NW = MSE_NW, h))
+  }
+  record_nw[,exp] <- result_nw$mMSE_NW #
+  mMSE_NW <- mMSE_NW + result_nw$mMSE_NW
+  
+  result_hy <- data.frame()
+  for(i in 1:length(ratioh)){
+    for(j in 1:length(ratiog)){
+      h <- ratioh[i]*para$h
+      g <- ratiog[j]*para$g
+      para$lambda <- 1 + h^2/g^2
+      nw_res <- nw_simu(train_label, test, para$n,h, k)
+      ss_res <- ss_simu(train_label, train_un, test, para$n,h, para$m,g, k)
+      
+      hy_res <- hy_simu(test, para$lambda, nw_res$esti$esti_nw, ss_res$esti$esti_ss)
+      
+      result_hy <- rbind(result_hy, data.frame(mMSE_HY = hy_res$MSE, h, g))
+    }
+  }
+  record_hy[,exp] <- result_hy$mMSE_HY#
+  mMSE_HY <- mMSE_HY + result_hy$mMSE_HY
+}
+
+result_nw$mMSE_NW <- mMSE_NW/rounds
+result_hy$mMSE_HY <- mMSE_HY/rounds
+```
+
 Checking whether the mMSE have already converged
 ```{r}
-hist(record_nw)
+hist(record_nw[1,])
 mean(record_nw)
 
-hist(record_hy)
+hist(record_hy[45,])
 mean(record_hy,na.rm = T)
 
 rolling_mean_nw <- record_nw
@@ -522,13 +575,19 @@ Setup parameters and sample.
 ```{r}
 set.seed(20)
 
-para <- paraset_g(128,15/19,rk$value, muk$value)
+para <- paraset_g(2^10,10/19,rk$value, muk$value)
 ```
 
 Estimate CI for all (h,g)
 ```{r}
+set.seed(1)
+data <- simu_norm(para$m + para$n, 1, para$m, meanx = 0, sigmax = sigmax, sigmaep = sigmaep)
+    
+train_label <- data[1:para$n,]
+train_un <- data[(1+para$n):(para$m+para$n),]
+
 hlist <- seq(0.1,1,0.1)
-glist <- seq(1,5,1)
+glist <- 1/(seq(1.1,0.2,-0.1))
 
 CI <- data.frame()
 for(i in hlist){
@@ -542,16 +601,17 @@ for(i in hlist){
 plot(CI$esti, xlab = "Combinations", ylab = "Estimates", ylim = c(-10,10))
 points(CI$lower, col = "red")
 points(CI$upper, col = "blue")
+abline(h = 4, col = "black")
 legend("topright", legend=c("Upper","Lower"),col=c("blue","red"), pch = c(1,1),cex=0.8)
 ```
 
 Test the true coverage probability
 ```{r}
-set.seed(5)
+set.seed(8)
 
-rounds <- 50
+rounds <- 100
 
-para$h <- 0.6 # result_hy$h[HY_opt]
+para$h <- 0.05 # result_hy$h[HY_opt]
 para$g <- 1 # result_hy$g[HY_opt]
 
 coverage <- data.frame()
@@ -563,7 +623,7 @@ for(i in 1:rounds){
   train_label <- data[1:para$n,]
   train_un <- data[(1+para$n):(para$m+para$n),]
   
-  coverage <- rbind(coverage,CI_1(adjust = 3,0.95,para,train_label,train_un,test,sigmaep,rk$value,sigmak$value))
+  coverage <- rbind(coverage,CI_1(adjust = 1,0.95,para,train_label,train_un,test,sigmaep,rk$value,sigmak$value))
 }
 
 coverage$cover <- (coverage$lower <= test$Y)*(coverage$upper >= test$Y)
@@ -575,20 +635,28 @@ Draw the plot to show how CI performs
 ```{r}
 plot(coverage$lower, xlab = "Combinations", ylab = "Estimates",col="red", ylim = c(0,10))
 points(coverage$upper, col = "blue")
+lines(coverage$esti, lty = 2)
 abline(h = 4, col = "black")
 legend("topright", legend=c("Upper","Lower"),col=c("blue","red"), pch = c(1,1),cex=0.8)
+```
+
+
+Diagnostics
+```{r}
+var(coverage$esti)
+mean(coverage$sd)^2
 ```
 
 Find the relationship between bandwidth and coverage probability
 ```{r}
 set.seed(5)
 
-rounds <- 50
+rounds <- 100
 
 hlist <- seq(0.1,1,0.1)
 glist <- seq(1,5,1)
 
-coverage <- data.frame()
+coverage_all <- data.frame()
 
 cover <- 1:rounds
 
@@ -602,13 +670,23 @@ for(i in 1:length(hlist)){
       train_label <- data[1:para$n,]
       train_un <- data[(1+para$n):(para$m+para$n),]
       
-      temp <- CI_1(adjust = 1,0.95,para,train_label,train_un,test,sigmaep,rk$value,sigmak$value)
+      temp <- CI_1(adjust = 2,0.95,para,train_label,train_un,test,sigmaep,rk$value,sigmak$value)
       
       cover[ep] <- (temp$lower <= test$Y)*(temp$upper >= test$Y)
     }
-    coverage <- rbind(coverage,data.frame(h = para$h, g = para$g, cover = mean(cover, na.rm = T)))
+    coverage_all <- rbind(coverage_all,data.frame(h = para$h, g = para$g, cover = mean(cover, na.rm = T)))
   }
 }
+```
+
+Visualize the relationship between (h, g) and coverage probability
+```{r}
+plot(hlist,coverage_all$cover[1:length(hlist)],type = "n",pch = 1, ylab = "Coverage Probability", main = "(h,g) and Coverage Probability", ylim = c(0.3,1))
+for(i in 1:length(glist)){
+  lines(hlist,coverage_all$cover[(1+(i-1)*length(hlist)):(i*length(hlist))], col = i, pch = i ,type = "b")
+}
+legend("bottomleft", legend = glist,col=1:length(hlist), pch = 1:length(hlist),cex=0.8)
+abline(h = 0.95, col = "black")
 ```
 
 
@@ -616,3 +694,6 @@ Next, we estimate the error variance.
 ```{r}
 
 ```
+
+avoid setting h too small when the data is sparse. Redefine phat so not fall below the constant.
+Common approach to avoid Computational issue
