@@ -1,0 +1,1 @@
+"0","plot(mMSE_HY~h,data = filter(result_hy, g == result_hy$g[HY_opt]), type=""b"", pch=19, col=""red"", xlab=""h"", ylab=""MSE"",main = ""g = 0.5"")"

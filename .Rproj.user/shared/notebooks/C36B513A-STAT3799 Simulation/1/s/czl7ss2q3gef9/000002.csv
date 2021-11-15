@@ -1,0 +1,8 @@
+"0","sigmak <- integrate(function(x) k(x)^2*x^2, -Inf, Inf)"
+"0","rk <- integrate(function(x) k(x)^2, -Inf, Inf)"
+"0","muk <- integrate(function(x) k(x)*x^2, -Inf, Inf)"
+"0","#rp <- integrate(function(x) p_2(x)^2, -Inf, Inf)"
+"0","#rq <- integrate(function(x) q_2(x)^2, -Inf, Inf)"
+"0",""
+"0","theta22 <- integrate(function(x) mx_2(x)^2*p(x), -Inf, Inf)"
+"0","sigmaep <- 1"
