@@ -1,0 +1,5 @@
+"0","h_opt_esti <- function(para,train_label,train_un,test,sigmaep_esti,rk,sigmak,E_H_ratio = 1){"
+"0","  mx_deriv1 <- mhat_1(para$n,para$h,test$X,train_label$X,train_label$Y,k,k_1)"
+"0","  h_opt <- (sigmaep_esti^2*rk$value/(4*mx_deriv1^2*sigmak$value))^(1/5)*(para$m*para$g^3)^(1/5)*para$n^(-1/5)"
+"0","  return(h_opt)"
+"0","}"

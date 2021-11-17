@@ -296,7 +296,7 @@ Data: We have in total 128 * 2 data points of (X,Y). Then I choose n = 32, 64, 1
 
 Set up hyperparameters, distribution functions and kernel
 ```{r}
-sigmax <- 1
+sigmax <- 5
 p <- function(x) 1/sqrt(2*pi*sigmax^2)*exp(-0.5*(x-0)^2/sigmax^2)
 p_1 <- Deriv(p)
 p_2 <- Deriv(p_1)
@@ -366,7 +366,7 @@ data <- simu_norm(para$n + para$m, 1, para$m, meanx = 0, sigmax = sigmax, sigmae
 rounds <- 100
 
 hlist <- seq(0.05,0.5,0.05)
-glist <- seq(1,10,1)
+glist <- seq(0.1,1.5,0.2)
 
 mMSE_NW <- 0
 mMSE_HY <- 0
@@ -505,17 +505,15 @@ min(result_hy$mMSE_HY,na.rm = TRUE)
 NW_opt <- match(min(result_nw$mMSE_NW,na.rm = TRUE),result_nw$mMSE_NW)
 HY_opt <-match(min(result_hy$mMSE_HY,na.rm = TRUE),result_hy$mMSE_HY)
 
-plot(mMSE_NW~h,data = result_nw,col = "blue",main = str_c("h = ",result_nw$h[NW_opt]))
+plot(mMSE_NW~h,data = result_nw,col = "blue")
 
-g_main <- str_c("g = ",result_hy$g[HY_opt])
-h_main <- str_c("h = ",result_hy$h[HY_opt])
-plot(mMSE_HY~h,type = "b",data = filter(result_hy, g == result_hy$g[HY_opt]),main = g_main)
-plot(mMSE_HY~g,type = "b",data = filter(result_hy, h == result_hy$h[HY_opt]),main = h_main)
+plot(mMSE_HY~h,type = "b",data = filter(result_hy, g == result_hy$g[HY_opt]),main = "g = 0.3")
+plot(mMSE_HY~g,type = "b",data = filter(result_hy, h == result_hy$h[HY_opt]),main = "h = 0.1")
 ```
 
 Visualize the performance of estimators
 ```{r}
-plot(mMSE_HY~h,data = filter(result_hy, g == result_hy$g[HY_opt]), type="b", pch=19, col="red", xlab="h", ylab="MSE",main = g_main)
+plot(mMSE_HY~h,data = filter(result_hy, g == result_hy$g[HY_opt]), type="b", pch=19, col="red", xlab="h", ylab="MSE",main = "g = 0.5")
 # Add a line
 lines(mMSE_NW~h,data = result_nw, pch=18, col="blue", type="b", lty=2)
 # Add a legend
@@ -739,6 +737,11 @@ Setup parameters and sample. Then estimate error.
 ```{r}
 set.seed(30)
 para <- paraset_g(128,10/19,rk$value, muk$value)
+data <- simu_norm(para$m + para$n, 1, para$m, meanx = 0, sigmax = sigmax, sigmaep = sigmaep)
+train_label <- data[1:para$n,]
+train_un <- data[(1+para$n):(para$m+para$n),]
+
+sigmaep_esti <- sqrt(esti_error(para,train_label))
 ```
 
 Test the true coverage probability
@@ -757,7 +760,7 @@ for(i in 1:rounds){
 
   train_label <- data[1:para$n,]
   train_un <- data[(1+para$n):(para$m+para$n),]
-  sigmaep_esti <- sqrt(esti_error(para,train_label))
+  
   coverage <- rbind(coverage,CI_1(adjust = 1,0.95,para,train_label,train_un,test,sigmaep_esti,rk$value,sigmak$value))
 }
 
@@ -845,84 +848,13 @@ heatmap2 + geom_tile()
 
 Exp3: After exploring the properties of the proposed estimator, we shall provide some methods to find the (h,g) can construct confidence interval. The first method is through the approximated variance.
 
-Although from the equation, we observe that the variance is a decreasing function of g. But to ensure asymptotic properties holds and qhat is precise enough, g need to be small enough. We here choose it to be (8*pi^(1/2)/3)^(1/5)*sd(train_label$X)*(rk$value/muk$value^2/(para$m))^(1/5), which is approximated the best choice for "kernel density estimator".
+Although from the equation, we observe that the variance is a decreasing function of g. But to ensure asymptotic properties holds and qhat is precise enough, g need to be small enough. We here choose it to be m^(-1/5)
 ```{r}
-h_opt_esti <- function(para,train_label,train_un,test,sigmaep_esti,rk,sigmak,E_H_ratio = 1){
+h_opt_esti <- function(level,adjust,para,train_label,train_un,test,sigmaep_esti,rk,sigmak,E_H_ratio = 1){
   mx_deriv1 <- mhat_1(para$n,para$h,test$X,train_label$X,train_label$Y,k,k_1)
-  h_opt <- (sigmaep_esti^2*rk$value/(4*mx_deriv1^2*sigmak$value))^(1/5)*(para$m*para$g^3)^(1/5)*para$n^(-1/5)
-  return(h_opt)
+  h_opt <- (sigmaep_esti^2*rk$value/(4*mx_deriv1^2*sigmak$value))^(1/5)*para$m^(2/25)*para$n^(-1/5)
 }
 ```
-
-```{r}
-set.seed(50)
-para <- paraset_g(512,10/19,rk$value, muk$value)
-
-data <- simu_norm(para$m + para$n, 1, para$m, meanx = 0, sigmax = sigmax, sigmaep = sigmaep)
-
-train_label <- data[1:para$n,]
-train_un <- data[(1+para$n):(para$m+para$n),]
-
-para$g <- (8*pi^(1/2)/3)^(1/5)*sd(train_label$X)*(rk$value/muk$value^2/para$m)^(1/5)
-
-sigmaep_esti <- sqrt(esti_error(para,train_label))
-
-h_opt <- h_opt_esti(para,train_label,train_un,test,sigmaep_esti,rk,sigmak);h_opt
-```
-
-Test the true coverage probability
-```{r}
-set.seed(60)
-
-rounds <- 100
-
-coverage <- data.frame()
-
-for(i in 1:rounds){
-  data <- simu_norm(para$m + para$n, 1, para$m, meanx = 0, sigmax = sigmax, sigmaep = sigmaep)
-  para <- paraset_g(para$n,10/19,rk$value, muk$value)
-  train_label <- data[1:para$n,]
-  train_un <- data[(1+para$n):(para$m+para$n),]
-  para$g <- (8*pi^(1/2)/3)^(1/5)*sd(train_label$X)*(rk$value/muk$value^2/para$m)^(1/5)
-  sigmaep_esti <- sqrt(esti_error(para,train_label))
- para$h <- h_opt_esti(para,train_label,train_un,test,sigmaep_esti,rk,sigmak)
-  coverage <- rbind(coverage,CI(adjust = 1,0.95,para,train_label,train_un,test,sigmaep_esti,rk$value,sigmak$value))
-}
-
-coverage$cover <- (coverage$lower <= test$Y)*(coverage$upper >= test$Y)
-mean(coverage$cover,na.rm = T)
-```
-
-GGPLOT2: From the plots, we can see that the choice of g is quite large. I suspect that this is because of the large variance of g. I will now change sigmax to 1. The finding is interesting, coverage probability now is increasing with n and m. 
-```{r}
-test_label <- str_c("n = ", para$n)
-ggplot(data = coverage,aes(x = simulation,y = esti)) + 
-  geom_line()+
-  geom_hline(yintercept = 4)+
-  geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.3)+
-  labs(title="Plot of CI over 100 simulations",
-        x =test_label, y = "Estimation")+
-  theme(
-plot.title = element_text(size=14,hjust = 0.5)
-)
-
-```
-
-
-Exp4: After exploring the properties of the proposed estimator, we shall provide some methods to find the (h,g) can construct confidence interval. The second method is through resampling and cross-validation.
-
-First generate sample.
-```{r}
-set.seed(50)
-para <- paraset_g(512,10/19,rk$value, muk$value)
-
-data <- simu_norm(para$m + para$n, 1, para$m, meanx = 0, sigmax = sigmax, sigmaep = sigmaep)
-
-train_label <- data[1:para$n,]
-train_un <- data[(1+para$n):(para$m+para$n),]
-```
-
-Secondly, do cross validataion.
 
 
 avoid setting h too small when the data is sparse. Redefine phat so not fall below the constant.

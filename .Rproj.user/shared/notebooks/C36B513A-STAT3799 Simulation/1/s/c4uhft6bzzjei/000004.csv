@@ -1,5 +1,0 @@
-"0","ggplot(data = coverage,aes(x = simulation,y = esti)) + "
-"0","  geom_line()+"
-"0","  geom_hline(yintercept = 4)+"
-"0","    geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.3)"
-"0",""

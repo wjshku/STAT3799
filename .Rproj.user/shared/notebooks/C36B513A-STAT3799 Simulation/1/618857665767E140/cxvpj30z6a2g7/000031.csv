@@ -1,0 +1,7 @@
+"0","result_hy$group <- cut(result_hy$mMSE_HY, breaks=c(quantile(result_hy$mMSE_HY, probs = seq(0, 1, by = 0.20))),include.lowest = T)"
+"0",""
+"0","heatmap1 <- ggplot(result_hy, aes(h, g,fill = group))"
+"0","heatmap1 + geom_tile()+ "
+"0","  scale_fill_manual(breaks = levels(result_hy$group),"
+"0","                    values = c(""#86ebc9"", ""#869ceb"","
+"0","                               ""#b986eb"",""#a1eb86"",""#09855c""))"

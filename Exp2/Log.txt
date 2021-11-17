@@ -1,3 +1,8 @@
 n = 32: bandwidth and coverage, seed = 40, single coverage repitition, seed = 8
 n = 64: bandwidth and coverage, seed = 1, single coverage repitition, seed = 9
-n = 128: bandwidth and coverage, seed = 10, single coverage repitition, seed = 8
+n = 128: bandwidth and coverage, seed = 10, single coverage repitition, seed = 10
+
+With error estimate
+n = 32: bandwidth and coverage, seed = 40, single coverage repitition, seed = 8
+n = 64: bandwidth and coverage, seed = 1, single coverage repitition, seed = 9
+n = 128: bandwidth and coverage, seed = 10, single coverage repitition, seed = 10

@@ -1,0 +1,5 @@
+n = 32: data, seed = 50, resampling, seed = 43, true repitition, seed = 20
+n = 64: data, seed = 50, resampling, seed = 43, true repitition, seed = 20
+n = 128: data, seed = 50, resampling, seed = 43, true repitition, seed = 20
+
+Estimate error, seed = 30

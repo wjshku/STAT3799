@@ -1,3 +1,0 @@
-n = 32: data, seed = 50, resampling, seed = 43
-n = 64: data, seed = 50, resampling, seed = 43
-n = 128: data, seed = 50, resampling, seed = 43

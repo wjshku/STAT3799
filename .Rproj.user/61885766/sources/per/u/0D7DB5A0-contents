@@ -1,0 +1,9 @@
+
+
+
+ggplot(data2,aes(x=Var1,
+                 y=Var2,
+                 fill=group))+geom_tile()+
+  scale_fill_manual(breaks = levels(data2$group),
+                    values = c("#86ebc9", "#869ceb",
+                               "#b986eb","#a1eb86"))
