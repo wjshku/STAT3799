@@ -1,2 +1,0 @@
-"0","heatmap2 <- ggplot(coverage_all, aes(h, g, fill = cover))"
-"0","heatmap2 + geom_tile()"

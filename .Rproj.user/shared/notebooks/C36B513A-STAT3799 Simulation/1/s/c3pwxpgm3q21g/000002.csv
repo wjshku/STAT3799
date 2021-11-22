@@ -1,1 +1,0 @@
-"0","plot(coverage$lower, xlab = ""Combinations"", ylab = ""Estimates"",col=""red"", ylim = c(0,10))"

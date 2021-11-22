@@ -1,0 +1,4 @@
+"0","result_ci$true_cover <- coverage_all$cover"
+"0","result_ci$error <- abs(result_ci$cover_prop - 0.95)"
+"0","heatmap4 <- ggplot(result_ci, aes(h, g, fill = error))"
+"0","heatmap4 + geom_tile()"

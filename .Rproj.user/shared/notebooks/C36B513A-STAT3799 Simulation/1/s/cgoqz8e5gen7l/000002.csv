@@ -1,0 +1,2 @@
+"0","para <- paraset_g(32,10/19,rk$value, muk$value)"
+"0","test <- data.frame(X = 1.5, Y = mx(1.5))"

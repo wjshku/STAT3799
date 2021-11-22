@@ -1,0 +1,5 @@
+"0","labeled <- nw_simu(data[1:para$n,],data,para$n,para$h,k)$esti"
+"0","names(labeled) <- c(""X"",""Y"")"
+"0","unlabeled <- data"
+"0","error <- labeled$Y - data$Y"
+"0","error <- error - mean(error)"

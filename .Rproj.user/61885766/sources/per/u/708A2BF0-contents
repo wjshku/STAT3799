@@ -1,0 +1,6 @@
+plot(train_label$X,train_label$Y)
+
+plot(labeled$X,labeled$Y)
+points(data$X,data$X^2,col = "red")
+
+plot(error)

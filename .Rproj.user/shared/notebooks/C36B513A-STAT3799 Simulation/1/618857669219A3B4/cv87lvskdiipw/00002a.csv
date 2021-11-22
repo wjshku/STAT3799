@@ -1,0 +1,4 @@
+"0",""
+"0","g_main <- str_c(""g = "",result_hy$g[HY_opt])"
+"0","h_main <- str_c(""h = "",result_hy$h[HY_opt])"
+"0","plot(mMSE_HY~h,type = ""b"",data = filter(result_hy, g == result_hy$g[HY_opt]),main = g_main)"

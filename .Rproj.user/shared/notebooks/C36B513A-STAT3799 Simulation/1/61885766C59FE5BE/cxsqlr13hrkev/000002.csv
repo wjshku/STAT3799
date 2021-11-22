@@ -1,0 +1,2 @@
+"0","set.seed(30)"
+"0","para <- paraset_g(32,10/19,rk$value, muk$value)"
