@@ -1,2 +1,0 @@
-"0","# Add a legend"
-"0","legend(""topright"", legend=c(""MSE_HY"", ""MSE_NW""),col=c(""red"", ""blue""), lty=1:2, cex=0.8)"
