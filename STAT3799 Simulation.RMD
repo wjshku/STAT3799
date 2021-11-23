@@ -205,24 +205,28 @@ paraset_g <- function(n, m_order,rk, muk){
 Calculate parameter and test data point
 ```{r}
 para <- paraset_g(32,10/19,rk$value, muk$value)
-test <- data.frame(X = 2, Y = mx(2))
+test <- data.frame(X = 1, Y = mx(1))
 ```
 
 Do simulations: True repitition
 ```{r}
+epoch <- 20
 rounds <- 100
 
 hlist <- seq(0.1,1,0.1)
 glist <- seq(0.3,3,0.3)
 
-mMSE_NW <- 0
-mMSE_HY <- 0
+
 
 set.seed(10)
-record_nw <- matrix(nrow = length(hlist), ncol = rounds)
-record_hy <- matrix(nrow = length(hlist)*length(glist), ncol = rounds)
+record_nw <- matrix(nrow = length(hlist), ncol = epoch)
+record_hy <- matrix(nrow = length(hlist)*length(glist), ncol = epoch)
 
-for(exp in 1:rounds){
+for(ep in 1:epoch){
+  mMSE_NW <- 0
+  mMSE_HY <- 0
+  
+  for(exp in 1:rounds){
   data <- simu_norm(para$m + para$n, 1, meanx = 0, sigmax = sigmax, sigmaep = sigmaep)
     
   train_label <- data[1:para$n,]
@@ -236,7 +240,6 @@ for(exp in 1:rounds){
     
     result_nw <- rbind(result_nw, data.frame(mMSE_NW = MSE_NW, h))
   }
-  record_nw[,exp] <- result_nw$mMSE_NW #
   mMSE_NW <- mMSE_NW + result_nw$mMSE_NW
   
   result_hy <- data.frame()
@@ -253,12 +256,30 @@ for(exp in 1:rounds){
       result_hy <- rbind(result_hy, data.frame(mMSE_HY = hy_res$MSE, h, g))
     }
   }
-  record_hy[,exp] <- result_hy$mMSE_HY
   mMSE_HY <- mMSE_HY + result_hy$mMSE_HY
+  }
+  result_nw$mMSE_NW <- mMSE_NW/rounds
+  result_hy$mMSE_HY <- mMSE_HY/rounds
+  
+  record_nw[,ep] <- result_nw$mMSE_NW
+  record_hy[,ep] <- result_hy$mMSE_HY
 }
 
-result_nw$mMSE_NW <- mMSE_NW/rounds
-result_hy$mMSE_HY <- mMSE_HY/rounds
+
+```
+
+Calculate Monte Carlo Error
+```{r}
+MCM_nw <- apply(record_nw,1,mean)#MC mean
+MCE_nw <- apply(record_nw,1,sd)#MC error
+MC_nw <- data.frame(MCM = MCM_nw,MCE = MCE_nw,Lower = MCM_nw - MCE_nw,Upper = MCM_nw + MCE_nw)
+MC_nw$h <- result_nw$h
+
+MCM_hy <- apply(record_hy,1,mean)
+MCE_hy <- apply(record_hy,1,sd)
+MC_hy <- data.frame(MCM = MCM_hy,MCE = MCE_hy,Lower = MCM_hy - MCE_hy,Upper = MCM_hy + MCE_hy)
+MC_hy$h <- result_hy$h
+MC_hy$g <- result_hy$g
 ```
 
 Checking whether the mMSE have already converged
@@ -290,36 +311,36 @@ lines(rolling_mean_hy[26,])
 
 Find the optimal h and g, and tuning the range of them
 ```{r}
-min(result_nw$mMSE_NW,na.rm = TRUE)
-min(result_hy$mMSE_HY,na.rm = TRUE)
+min(MC_nw$MCM,na.rm = TRUE)
+min(MC_hy$MCM,na.rm = TRUE)
 
-NW_opt <- match(min(result_nw$mMSE_NW,na.rm = TRUE),result_nw$mMSE_NW)
-HY_opt <-match(min(result_hy$mMSE_HY,na.rm = TRUE),result_hy$mMSE_HY)
+NW_opt <- match(min(MC_nw$MCM,na.rm = TRUE),MC_nw$MCM)
+HY_opt <-match(min(MC_hy$MCM,na.rm = TRUE),MC_hy$MCM)
 
-plot(mMSE_NW~h,data = result_nw,col = "blue",main = str_c("h = ",result_nw$h[NW_opt]))
+plot(MCM~h,type = "b",data = MC_nw,col = "blue",main = str_c("h = ",MC_nw$h[NW_opt]))
 
-g_main <- str_c("g = ",result_hy$g[HY_opt])
-h_main <- str_c("h = ",result_hy$h[HY_opt])
-plot(mMSE_HY~h,type = "b",data = filter(result_hy, g == result_hy$g[HY_opt]),main = g_main)
-plot(mMSE_HY~g,type = "b",data = filter(result_hy, h == result_hy$h[HY_opt]),main = h_main)
+g_main <- str_c("g = ",MC_hy$g[HY_opt])
+h_main <- str_c("h = ",MC_hy$h[HY_opt])
+plot(MCM~h,type = "b",data = filter(MC_hy, g == MC_hy$g[HY_opt]),main = g_main)
+plot(MCM~g,type = "b",data = filter(MC_hy, h == MC_hy$h[HY_opt]),main = h_main)
 ```
 
 Visualize the performance of estimators
 ```{r}
-plot(mMSE_HY~h,data = filter(result_hy, g == result_hy$g[HY_opt]), type="b", pch=19, col="red", xlab="h", ylab="MSE",main = g_main)
+plot(MCM~h,data = filter(MC_hy, g == MC_hy$g[HY_opt]), type="b", pch=19, col="red", xlab="h", ylab="MSE",main = g_main)
 # Add a line
-lines(mMSE_NW~h,data = result_nw, pch=18, col="blue", type="b", lty=2)
+lines(MCM~h,data = MC_nw, pch=18, col="blue", type="b", lty=2)
 # Add a legend
 legend("topright", legend=c("MSE_HY", "MSE_NW"),col=c("red", "blue"), lty=1:2, cex=0.8)
 ```
 
 Visualize the performance of estimators: Two dimensional heatmap
 ```{r}
-result_hy$Group_by_percentile <- cut(result_hy$mMSE_HY, breaks=c(quantile(result_hy$mMSE_HY, probs = seq(0, 1, by = 0.20))),include.lowest = T)
+MC_hy$Group_by_percentile <- cut(MC_hy$MCM, breaks=c(quantile(MC_hy$MCM, probs = seq(0, 1, by = 0.20))),include.lowest = T)
 
-heatmap1 <- ggplot(result_hy, aes(h, g,fill = Group_by_percentile))
+heatmap1 <- ggplot(MC_hy, aes(h, g,fill = Group_by_percentile))
 heatmap1 + geom_tile()+ 
-  scale_fill_manual(breaks = levels(result_hy$Group_by_percentile),
+  scale_fill_manual(breaks = levels(MC_hy$Group_by_percentile),
                     values = c("#86ebc9", "#869ceb",
                                "#b986eb","#a1eb86","#09855c"))+
   labs(title="Grid Search Result of MSE")+
@@ -634,7 +655,7 @@ nw_ci <- function(rounds,para, test, hlist){
         for(i in 1:rounds){
           data <- simu_norm(para$m + para$n, 1, meanx = 0, sigmax = sigmax, sigmaep = sigmaep)
           
-          h <- (8*pi^(1/2)/3)^(1/5)*sd(data$X)*(rk$value/muk$value^2/para$n)^(1/5)
+          h_opt <- (8*pi^(1/2)/3)^(1/5)*sd(data$X)*(rk$value/muk$value^2/para$n)^(1/5)
           px <- phat(para$n,h,test$X,data$X,k)
           qx <- px
           h_opt <- nw_cv(hlist = seq(0.1,4,0.1),train_label)
@@ -649,11 +670,12 @@ nw_ci <- function(rounds,para, test, hlist){
           #esti_nw <- mhat(para$n,para$h,test$X,data[1:para$n,]$X,data[1:para$n,]$Y,k)
           
           boot <- rep(0,1000)
+          para$h <- h
           
           for(ep in 1:length(boot)){
             train_label <- labeled
             train_label$Y <- train_label$Y + error[sample(1:length(error), para$n,replace = T)]
-            boot[ep] <- mhat(para$n,h,test$X,train_label$X,train_label$Y,k)
+            boot[ep] <- mhat(para$n,para$h,test$X,train_label$X,train_label$Y,k)
           }
           boot_quan <- quantile(boot,c((1-0.95)/2,1-(1-0.95)/2))
           coverage_nw <- rbind(coverage_nw,data.frame(lower = boot_quan[1],upper = boot_quan[2]))
@@ -695,10 +717,10 @@ set.seed(20)
 
 rounds <- 150
 
-hlist <- c(0.1,0.4)
-glist <- c(0.3,0.9)
+hlist <- seq(0.1,0.3,0.1)
+glist <- seq(0.3,0.3,0.3)
 
-type <- 0
+type <- 1
 if(type == 0){
   coverage_all <- nw_ci(rounds, para, test, hlist)
 }else if(type == 1){
