@@ -1,0 +1,8 @@
+"0","esti_sigmaep <- function(n,h,train_label){"
+"0","  esti <- train_label$Y"
+"0","  for(i in 1:length(esti)){"
+"0","    esti[i] <- mhat(n,h,x = train_label$X[i],X = train_label$X,Y = train_label$Y,k)"
+"0","  }"
+"0","  var_esti <- mean((esti - train_label$Y)^2)"
+"0","  return(sqrt(var_esti))"
+"0","}"

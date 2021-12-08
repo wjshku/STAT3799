@@ -1,0 +1,5 @@
+"0","MCM_hy <- apply(record_hy,1,mean)"
+"0","MCE_hy <- apply(record_hy,1,sd)"
+"0","MC_hy <- data.frame(MCM = MCM_hy,MCE = MCE_hy,Lower = MCM_hy - MCE_hy,Upper = MCM_hy + MCE_hy)"
+"0","MC_hy$h <- result_hy$h"
+"0","MC_hy$g <- result_hy$g"

@@ -6,6 +6,7 @@ para$time <- time
 write.xlsx(mse,file,sheetName = time,append = TRUE)
 
 file <- "C:/HKU/Research/Stephen/STAT3799/Notes/Grid record.xlsx"
+
 write.xlsx(result,file,sheetName = "1106_1954_res",append = TRUE)
 write.xlsx(data_all$data,file,sheetName = "1106_1954_data",append = TRUE)
 write.xlsx(data_all$data_un,file,sheetName = "1106_1954_dataun",append = TRUE)
@@ -20,3 +21,15 @@ addDataFrame(para, sheet, col.names = FALSE, row.names = FALSE,
              startRow = 4, startColumn = 1)
 # save to disk
 saveWorkbook(wb, file)
+
+file <- "C:/HKU/Research/Stephen/STAT3799/Deliverable/temprecord.csv"
+write.csv(coverage_exp4,file)
+
+MC_nw <- read.table(file = "clipboard", header = T)
+
+MC_hy <- read.table(file = "clipboard", header = T)
+
+coverage_all <- read.table(file = "clipboard", header = T)
+
+MC_hy[HY_opt,]
+MC_nw[NW_opt,]

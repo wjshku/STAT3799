@@ -1,0 +1,22 @@
+mx_1(test$X)
+mx_2 <- Deriv(mx_1)
+mx_2(test$X)
+mx_3 <- Deriv(mx_2)
+mx_3(test$X)
+p_1(test$X)
+p_2 <- Deriv(p_1)
+p_3 <- Deriv(p_2)
+
+x <- test$X
+C1 <- (mx_1(x)*p_3(x) + mx_2(x)*p_2(x) + mx_3(x)*p_1(x) - mx_2(x)*p_2(x)*p_1(x)/p(x))/p(x)*muk$value^2
+C2 <- rk$value*sigmaep^2/p(x)
+C3 <- mx_1(x)^2*sigmak$value/p(x)
+n <- para$n
+m <- para$m
+mse <- function(para){
+  P1 <- C1 * para[1]^4 * para[2]^4
+  P2 <- C2/(n*para[1])
+  P3 <- C3 * para[1]^4/(m*para[2]^3)
+  return(P1+P2+P3)
+}
+optim(c(0.1,0.5),mse)

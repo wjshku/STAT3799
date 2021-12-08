@@ -1,0 +1,6 @@
+"0","para <- paraset_g(128,10/19,rk$value, muk$value)"
+"0","test <- data.frame(X = 1.5, Y = mx(1.5))"
+"0","hlist <- seq(0.1,1,0.2)"
+"0","glist <- seq(0.3,2.4,0.3)"
+"0","epoch <- 10"
+"0","rounds <- 20000"

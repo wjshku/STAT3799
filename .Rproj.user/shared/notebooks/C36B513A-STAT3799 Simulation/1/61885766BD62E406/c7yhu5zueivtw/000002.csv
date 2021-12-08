@@ -1,0 +1,4 @@
+"0","set.seed(30)"
+"0","para <- paraset_g(2^8,10/19,rk$value, muk$value)"
+"0","test <- data.frame(X = 1.5,Y = mx(1.5))"
+"0","rounds <- 50"

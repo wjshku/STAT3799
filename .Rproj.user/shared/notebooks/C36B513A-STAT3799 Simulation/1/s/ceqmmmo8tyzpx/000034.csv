@@ -1,0 +1,7 @@
+"0","simulation <- 1:rounds"
+"0","test_label <- str_c(""n = "", para$n)"
+"0","ggplot(data = coverage,aes(x = simulation,y = esti)) + "
+"0","  geom_line()+"
+"0","  geom_hline(yintercept = test$Y)+"
+"0","  geom_ribbon(aes(ymin=lower,ymax=upper),alpha=0.3)+ "
+"0","  labs(y = ""m(x)"")"

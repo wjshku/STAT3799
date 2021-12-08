@@ -1,0 +1,2 @@
+"0","#+labs(title=""Plot of CI over 100 simulations"",x =test_label, y = #""Estimation"")+"
+"0","  #theme(plot.title = element_text(size=14,hjust = 0.5))"

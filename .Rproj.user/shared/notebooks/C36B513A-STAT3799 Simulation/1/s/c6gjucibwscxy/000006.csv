@@ -1,0 +1,4 @@
+"0",""
+"0","g_main <- str_c(""g = "",MC_hy$g[HY_opt])"
+"0","h_main <- str_c(""h = "",MC_hy$h[HY_opt])"
+"0","plot(MCM~h,type = ""b"",data = filter(MC_hy, g == MC_hy$g[HY_opt]),main = g_main)"

@@ -1,0 +1,3 @@
+"0","for(i in 1:length(glist)){"
+"0","  lines(hlist,coverage_all$coverage[(1+(i-1)*length(hlist)):(i*length(hlist))], col = i, pch = i ,type = ""b"")"
+"0","}"

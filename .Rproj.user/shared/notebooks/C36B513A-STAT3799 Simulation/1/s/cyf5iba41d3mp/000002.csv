@@ -1,0 +1,4 @@
+"0","MCM_nw <- apply(record_nw,1,mean)#MC mean"
+"0","MCE_nw <- apply(record_nw,1,sd)#MC error"
+"0","MC_nw <- data.frame(MCM = MCM_nw,MCE = MCE_nw,Lower = MCM_nw - MCE_nw,Upper = MCM_nw + MCE_nw)"
+"0","MC_nw$h <- result_nw$h"

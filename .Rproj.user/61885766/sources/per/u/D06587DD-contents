@@ -1,0 +1,15 @@
+
+
+for(i in 1:10){
+  data <- simu_norm(para$m + para$n, 1, meanx = 0, sigmax = sigmax, sigmaep = sigmaep)
+  train_label <- data[1:para$n,]
+  train_un <- data[(1+para$n):(para$m+para$n),]
+  test <- data.frame(X = 1, Y = mx(1))
+  h_opt <- nw_cv(hlist = seq(0.1,4,0.1),train_label)
+  mx_deriv1 <- mhat_1(para$n,h_opt,test$X,train_label$X,train_label$Y,k,k_1)
+  print(mx_deriv1)
+}
+
+ResDev <- c(732.74, 662.25, 649.01, 637.22)
+Dev <- abs(diff(ResDev))
+p.lrt <- round( pchisq(Dev, df=1, lower.tail=FALSE), 3)

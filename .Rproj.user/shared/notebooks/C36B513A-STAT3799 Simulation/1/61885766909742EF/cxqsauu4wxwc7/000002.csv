@@ -1,0 +1,13 @@
+"0","    for(exp in 1:nrow(train_label)){
+        
+        test <- train_label[exp,]
+        
+        train_label_loo <- train_label[-exp,]
+        
+        esti <- mhat(n = para$n,h = h,x = test$X,X = train_label_loo$X,Y = train_label_loo$Y,k)
+        
+        mse <- mse + (esti - test$Y)^2
+    }
+"
+"2","Error in mse : 找不到对象'mse'
+"

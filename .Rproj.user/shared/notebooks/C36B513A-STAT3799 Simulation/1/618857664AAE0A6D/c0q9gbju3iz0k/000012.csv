@@ -1,0 +1,1 @@
+"0","plot(glist,coverage_all$coverage[1:length(glist)],type = ""n"",pch = 1, ylab = ""Coverage Probability"", main = ""(h,g) and Coverage Probability"", ylim = c(0.3,1))"
